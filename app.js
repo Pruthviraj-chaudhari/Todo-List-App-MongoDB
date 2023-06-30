@@ -1,47 +1,63 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const date = require(__dirname+ "/date.js");
+const mongoose = require("mongoose");
+const date = require(__dirname + "/date.js");
 
 const app = express();
 app.set('view engine', 'ejs');
 app.use(express.static("public"))
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const items = [];
-const workItems = [];
+mongoose.connect("mongodb://127.0.0.1:27017/todolistDB", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+
+const itemSchema = new mongoose.Schema({
+    name: String
+})
+
+const Item = mongoose.model("Item", itemSchema);
+
+const defaultItems = [
+    { name: "Welcome to your todolist!" },
+    { name: "Hit the + button to add a new item." },
+    { name: "<-- Hit this to delete an item." }
+]
 
 app.get('/', (req, res) => {
-    let formatedDate = date.getDate();
-    res.render("list", {listTitle: formatedDate, listArray: items});
+    const formatedDate = date.getDate();
+
+    Item.find({})
+        .then((items) => {
+
+            if (items.length === 0) {
+                Item.insertMany(defaultItems)
+                    .then(() => { console.log("Default Items Inserted Successfully") })
+                    .catch(error => { console.log("Error Inserting Documents: ", err) });
+            }
+
+            res.render("list", { listTitle: formatedDate, listArray: items });
+        })
+        .catch(err => {
+            consolr.log("Error Finding Documents: ", err);
+        })
 });
 
 app.post('/', (req, res) => {
-    let item = req.body.newItem;
+
+    const item = req.body.newItem;
 
     if (item === null || item.trim() === "") {
         // Handle empty input
         res.redirect('/');
-    } else {
-        if (req.body.button === "Work") {
-            workItems.push(item);
-            res.redirect("/work");
-        } else {
-            items.push(item);
-            res.redirect('/');
-        }
+    }
+    else {
+        items.push(item);
+        res.redirect('/');
     }
 });
 
-app.get("/work", (req, res)=>{
-    let title = "Work";
-    res.render("list", {listTitle: title, listArray: workItems});
-})
-
-app.post("/work", (req, res)=>{
-    let item = req.body.newItem;
-    workItems.push(item);
-    req.redirect("/work");
-})
 
 app.listen(3000, () => {
     console.log("Server Listening on port 3000");

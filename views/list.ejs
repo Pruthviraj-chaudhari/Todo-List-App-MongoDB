@@ -7,23 +7,21 @@
     </div>
 
     <div class="box">
-
-        <%for(var i=0; i< listArray.length; i++){ %>
+        <% listArray.forEach((item)=>{ %>
             <div class="item">
-                <input type="checkbox">
+                <input type="checkbox"/>
                 <p>
-                    <%= listArray[i] %>
+                    <%= item.name %>
                 </p>
             </div>
-            <% } %>
+        <% }); %>
+
+
 
         <form class="item" action="/" method="post">
-            <input type="text" name="newItem" id="newItemInput"  placeholder="New Item" autocomplete="off">
+            <input type="text" name="newItem" id="newItemInput" placeholder="New Item" autocomplete="off" />
             <button type="submit" name="button" value="<%= listTitle %>">+</button>
         </form>
     </div>
 
-<%- include("footer") -%>    
-
-
-    
+    <%- include("footer") -%>
