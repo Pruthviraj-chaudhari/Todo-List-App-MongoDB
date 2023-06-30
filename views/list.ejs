@@ -8,12 +8,14 @@
 
     <div class="box">
         <% listArray.forEach((item)=>{ %>
-            <div class="item">
-                <input type="checkbox"/>
-                <p>
-                    <%= item.name %>
-                </p>
-            </div>
+            <form action="/delete"  method="post">
+                <div class="item">
+                    <input type="checkbox" name="checkboxID" value="<%= item._id %>" onchange="this.form.submit()"/>
+                    <p>
+                        <%= item.name %>
+                    </p>
+                </div>
+            </form>
         <% }); %>
 
 

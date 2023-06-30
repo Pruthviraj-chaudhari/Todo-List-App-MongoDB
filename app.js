@@ -46,18 +46,21 @@ app.get('/', (req, res) => {
 
 app.post('/', (req, res) => {
 
-    const item = req.body.newItem;
+    const item = new Item({ name: req.body.newItem })
 
-    if (item === null || item.trim() === "") {
-        // Handle empty input
-        res.redirect('/');
-    }
-    else {
-        items.push(item);
-        res.redirect('/');
-    }
+    item.save()
+        .then(() => {
+            console.log("New item inserted into database");
+            res.redirect('/');
+        }).catch(err => { console.log(err) });
 });
 
+app.post('/delete', (req, res) => {
+    Item.deleteOne({ _id: req.body.checkboxID })
+        .then(() => { res.redirect('/'); })
+        .catch(err => { console.log("Cannot Delete Item") })
+
+})
 
 app.listen(3000, () => {
     console.log("Server Listening on port 3000");
