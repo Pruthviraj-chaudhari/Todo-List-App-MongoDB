@@ -25,8 +25,15 @@ const defaultItems = [
     { name: "<-- Hit this to delete an item." }
 ]
 
+const listSchema = {
+    name: String,
+    list: [itemSchema]
+}
+
+const List = mongoose.model('List', listSchema);
+
+const formatedDate = date.getDate();
 app.get('/', (req, res) => {
-    const formatedDate = date.getDate();
 
     Item.find({})
         .then((items) => {
@@ -44,23 +51,88 @@ app.get('/', (req, res) => {
         })
 });
 
-app.post('/', (req, res) => {
+app.get('/:customListName', (req, res) => {
+    const customListName = req.params.customListName;
 
-    const item = new Item({ name: req.body.newItem })
+    List.findOne({ name: customListName })
+        .then((foundList) => {
+            if (foundList) {
+                // Show an existing list
+                res.render("list", { listTitle: foundList.name, listArray: foundList.list });
+            } else {
+                // Create a new list
+                const listItem = new List({
+                    name: customListName,
+                    list: defaultItems
+                })
+                listItem.save()
+                    .then(() => { console.log("New List Created.") })
+                    .catch(err => { console.log("Error creating new list.") });
 
-    item.save()
-        .then(() => {
-            console.log("New item inserted into database");
-            res.redirect('/');
-        }).catch(err => { console.log(err) });
+                res.redirect(`/${customListName}`);
+            }
+        })
+        .catch((err) => {
+            console.log("Error Finding in List Collection");
+        });
 });
+
+app.post('/', (req, res) => {
+    const newItem = req.body.newItem;
+    const listName = req.body.listbutton;
+
+    if (newItem === null || newItem === undefined || newItem.trim() === "") {
+        res.redirect(`/${listName}`);
+    } else {
+        const item = new Item({ name: newItem });
+
+        if (listName === formatedDate) {
+            item.save()
+                .then(() => {
+                    console.log("New Item Added to Default List");
+                    res.redirect('/');
+                })
+                .catch(err => {
+                    console.log("Error Inserting:", err);
+                    // Handle the error here (e.g., redirect to an error page)
+                });
+        } else {
+            List.findOne({ name: listName })
+                .then((found) => {
+                    if (found) {
+                        found.list.push(item);
+                        found.save()
+                            .then(() => {
+                                console.log("New Item Added to Custom List");
+                                res.redirect('/' + listName);
+                            })
+                            .catch(err => {
+                                console.log("Error Saving Custom List:", err);
+                                // Handle the error here (e.g., redirect to an error page)
+                            });
+                    } else {
+                        console.log("Custom List Not Found");
+                        // Handle the case when the custom list is not found
+                        // (e.g., redirect to an error page)
+                    }
+                })
+                .catch(err => {
+                    console.log("Error finding Custom ListName:", err);
+                    // Handle the error here (e.g., redirect to an error page)
+                });
+        }
+    }
+});
+
 
 app.post('/delete', (req, res) => {
     Item.deleteOne({ _id: req.body.checkboxID })
-        .then(() => { res.redirect('/'); })
-        .catch(err => { console.log("Cannot Delete Item") })
-
+        .then(() => {
+            console.log("Item deleted from database");
+            res.redirect('/');
+        }).catch(err => { console.log(err) });
 })
+
 
 app.listen(3000, () => {
     console.log("Server Listening on port 3000");
