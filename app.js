@@ -6,8 +6,8 @@ const session = require("express-session");
 const passport = require("passport");
 const passportLocalMongoose = require("passport-local-mongoose");
 const LocalStrategy = require('passport-local').Strategy;
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const GitHubStrategy = require('passport-github2').Strategy;
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const findOrCreate = require("mongoose-findorcreate");
 const date = require(__dirname + "/date.js");
 require("dotenv").config();
@@ -68,6 +68,24 @@ passport.deserializeUser(function (id, done) {
 
 passport.use(new LocalStrategy(User.authenticate()));
 
+passport.use(new GitHubStrategy({
+    clientID: process.env.GITHUB_CLIENT_ID,
+    clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    callbackURL: "https://todo-list-rfeb.onrender.com/auth/github/todo"
+},
+    function (accessToken, refreshToken, profile, done) {
+    
+        const { id, displayName } = profile;
+        User.findOrCreate({ githubId: id, name: displayName }, function (err, user) {
+            if (err) {
+                return done(err);
+            }
+            return done(null, user);
+        });
+
+    }
+));
+
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -82,24 +100,6 @@ passport.use(new GoogleStrategy({
         return done(null, user);
     });
 }));
-
-passport.use(new GitHubStrategy({
-    clientID: process.env.GITHUB_CLIENT_ID,
-    clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    callbackURL: "https://todo-list-rfeb.onrender.com/auth/github/todo",
-}, function (accessToken, refreshToken, profile, done) {
-    process.nextTick(function () {
-        const { id, displayName } = profile;
-        User.findOrCreate({ githubId: id, name: displayName }, function (err, user) {
-            if (err) {
-                return done(err);
-            }
-            return done(null, user);
-        });
-        return done(null, profile);
-    });
-}));
-
 
 
 const formatedDate = date.getDate();
@@ -218,7 +218,7 @@ app.post('/delete', async (req, res) => {
 
 app.post("/login", passport.authenticate('local', {
     successRedirect: '/todo',
-    failureRedirect: '/login'
+    failureRedirect: '/'
 }));
 
 app.post("/register", (req, res) => {
