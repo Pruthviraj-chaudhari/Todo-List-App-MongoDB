@@ -9,6 +9,7 @@ const LocalStrategy = require('passport-local').Strategy;
 const GitHubStrategy = require('passport-github2').Strategy;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const findOrCreate = require("mongoose-findorcreate");
+const axios = require("axios");
 const date = require(__dirname + "/date.js");
 require("dotenv").config();
 
@@ -37,7 +38,7 @@ mongoose.connect(URL, { useNewUrlParser: true, useUnifiedTopology: true })
         console.log("Error connecting to the database:", err);
     });
 
- const itemSchema = {
+const itemSchema = {
     name: String
 };
 
@@ -74,7 +75,7 @@ passport.use(new GitHubStrategy({
     callbackURL: "https://todo-list-rfeb.onrender.com/auth/github/todo"
 },
     function (accessToken, refreshToken, profile, done) {
-    
+
         const { id, displayName } = profile;
         User.findOrCreate({ githubId: id, name: displayName }, function (err, user) {
             if (err) {
@@ -123,7 +124,7 @@ app.get('/auth/google',
 );
 
 app.get('/auth/google/todo',
-    passport.authenticate('google', { failureRedirect: "/login" }),
+    passport.authenticate('google', { failureRedirect: "/" }),
     (req, res) => {
         // Successful authentication
         res.redirect("/todo");
@@ -135,7 +136,7 @@ app.get('/auth/github',
 );
 
 app.get('/auth/github/todo',
-    passport.authenticate('github', { failureRedirect: '/login' }),
+    passport.authenticate('github', { failureRedirect: '/' }),
     (req, res) => {
         // Successful authentication
         res.redirect('/todo');
@@ -164,7 +165,7 @@ app.get('/todo', (req, res) => {
                 console.log("Error Finding Documents: ", err);
                 res.redirect("/");
             });
-            
+
     } else {
         // If not authenticated, redirect to the home page
         res.redirect("/");
@@ -221,28 +222,46 @@ app.post("/login", passport.authenticate('local', {
     failureRedirect: '/'
 }));
 
-app.post("/register", (req, res) => {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password) {
-        return res.status(400).json({ message: 'All fields are required.' });
-    }
 
-    User.register(new User({ email, name }), password, (err, user) => {
-        if (err) {
-            console.error(err);
-            return res.redirect('/register');
+app.post("/register", async (req, res) => {
+
+    const { name, email, password } = req.body;
+
+    // Validate email using ZeroBounce API
+    try {
+        const apiKey = process.env.ZEROBOUNCE_API_KEY;
+        const response = await axios.get(`https://api.zerobounce.net/v2/validate?api_key=${apiKey}&email=${encodeURIComponent(email)}`);
+        const { status } = response.data;
+
+        if (status === 'valid') {
+
+            User.register(new User({ email, name }), password, (err, user) => {
+                if (err) {
+                    console.error(err);
+                    return res.redirect('/register');
+                }
+
+                req.login(user, function (err) {
+                    if (err) {
+                        console.error(err);
+                        return res.redirect('/');
+                    }
+                    return res.redirect('/todo');
+                });
+            });
+
+        } else {
+            return res.status(400).json({ message: 'Invalid Email, Please Enter a Valid Email Address.' });
         }
 
-        // Use req.login to log the user in and then redirect to '/todo'
-        req.login(user, function (err) {
-            if (err) {
-                console.error(err);
-                return res.redirect('/login');
-            }
-            return res.redirect('/todo');
-        });
-    });
+    } catch (error) {
+        console.error('Email validation error:', error);
+        return res.status(500).json({ message: 'Email validation failed. Please try again later.' });
+    }
+
+
 });
+
 
 // 404 error handler
 app.use((req, res) => {
