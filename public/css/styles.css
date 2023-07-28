@@ -1,13 +1,14 @@
 html {
   background-color: #E4E9FD;
   background-image: -webkit-linear-gradient(65deg, #A683E3 50%, #E4E9FD 50%);
-  min-height: 1000px;
+  min-height: 100vh;
   font-family: 'helvetica neue';
 }
 
 h1 {
   color: #fff;
   padding: 10px;
+  text-align: center;
 }
 
 .box {
@@ -76,7 +77,8 @@ input[type="text"] {
   background: transparent;
   font-size: 20px;
   font-weight: 200;
-  width: 313px;
+  width: 100%; /* Adjust this for better responsiveness */
+  max-width: 313px; /* Add this to set a maximum width */
 }
 
 input[type="text"]:focus {
@@ -90,7 +92,49 @@ input[type="text"]:focus {
 }
 
 footer {
-  color: white;
   color: rgba(0, 0, 0, 0.5);
   text-align: center;
+  margin-top: 50px;
+}
+
+.logout {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.logout-button {
+  min-height: 50px;
+  width: 50px;
+  border-radius: 50%;
+  border-color: transparent;
+  background-color: #A683E3;
+  color: #fff;
+  font-size: 30px;
+  padding-bottom: 6px;
+  border-width: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logout-button img {
+  display: block;
+  width: 25px;
+  height: 25px;
+}
+
+/* Media Query for Mobile View */
+@media screen and (max-width: 600px) {
+
+  #heading {
+    margin-top: 90px;
+  }
+  .box {
+    margin: 40px auto;
+  }
+
+  input[type="text"] {
+    max-width: 100%;
+  }
 }
