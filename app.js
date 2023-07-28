@@ -42,7 +42,7 @@ mongoose.connect(URL, { useNewUrlParser: true, useUnifiedTopology: true })
 };
 
 const userSchema = new mongoose.Schema({
-    email: { type: String, unique: true },
+    email: String,
     name: String,
     password: String,
     googleId: String,
