@@ -143,24 +143,34 @@ app.get('/auth/github/todo',
 );
 
 app.get('/todo', (req, res) => {
-    User.findById(req.user.id)
-        .then((foundUser) => {
-            if (foundUser && foundUser.items.length === 0) {
-                const defaultItems = [
-                    { name: "Hey👋 " + req.user.name },
-                    { name: "Welcome to your todolist 💝" }
-                ];
-                foundUser.items = defaultItems;
-                foundUser.save()
-                    .then(() => { console.log("Default Items Inserted Successfully") })
-                    .catch(error => { console.log("Error Inserting Documents: ", error) });
-            }
-            res.render("list", { listTitle: formatedDate, listArray: foundUser.items });
-        })
-        .catch(err => {
-            console.log("Error Finding Documents: ", err);
-        });
+
+    if (req.isAuthenticated()) {
+
+        User.findById(req.user.id)
+            .then((foundUser) => {
+                if (foundUser && foundUser.items.length === 0) {
+                    const defaultItems = [
+                        { name: "Hey👋 " + req.user.name },
+                        { name: "Welcome to your todolist 💝" }
+                    ];
+                    foundUser.items = defaultItems;
+                    foundUser.save()
+                        .then(() => { console.log("Default Items Inserted Successfully") })
+                        .catch(error => { console.log("Error Inserting Documents: ", error) });
+                }
+                res.render("list", { listTitle: formatedDate, listArray: foundUser.items });
+            })
+            .catch(err => {
+                console.log("Error Finding Documents: ", err);
+                res.redirect("/");
+            });
+            
+    } else {
+        // If not authenticated, redirect to the home page
+        res.redirect("/");
+    }
 });
+
 
 app.post('/todo', (req, res) => {
     const newItem = req.body.newItem;
