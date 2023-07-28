@@ -38,7 +38,7 @@ mongoose.connect(URL, { useNewUrlParser: true, useUnifiedTopology: true })
         console.log("Error connecting to the database:", err);
     });
 
-const itemSchema = {
+ const itemSchema = {
     name: String
 };
 
@@ -75,7 +75,7 @@ passport.use(new GitHubStrategy({
     callbackURL: "https://todo-list-rfeb.onrender.com/auth/github/todo"
 },
     function (accessToken, refreshToken, profile, done) {
-
+    
         const { id, displayName } = profile;
         User.findOrCreate({ githubId: id, name: displayName }, function (err, user) {
             if (err) {
@@ -124,7 +124,7 @@ app.get('/auth/google',
 );
 
 app.get('/auth/google/todo',
-    passport.authenticate('google', { failureRedirect: "/" }),
+    passport.authenticate('google', { failureRedirect: "/login" }),
     (req, res) => {
         // Successful authentication
         res.redirect("/todo");
@@ -136,7 +136,7 @@ app.get('/auth/github',
 );
 
 app.get('/auth/github/todo',
-    passport.authenticate('github', { failureRedirect: '/' }),
+    passport.authenticate('github', { failureRedirect: '/login' }),
     (req, res) => {
         // Successful authentication
         res.redirect('/todo');
@@ -165,7 +165,7 @@ app.get('/todo', (req, res) => {
                 console.log("Error Finding Documents: ", err);
                 res.redirect("/");
             });
-
+            
     } else {
         // If not authenticated, redirect to the home page
         res.redirect("/");
@@ -222,29 +222,42 @@ app.post("/login", passport.authenticate('local', {
     failureRedirect: '/'
 }));
 
-
 app.post("/register", async (req, res) => {
 
     const { name, email, password } = req.body;
 
-    // Validate email using ZeroBounce API
+    // Validate email using mailboxlayer API
     try {
-        const apiKey = process.env.ZEROBOUNCE_API_KEY;
-        const response = await axios.get(`https://api.zerobounce.net/v2/validate?api_key=${apiKey}&email=${encodeURIComponent(email)}`);
-        const { status } = response.data;
+        const apiKey = process.env.MAILBOXLAYER_API_KEY; 
+        const apiUrl = 'http://apilayer.net/api/check';
+        const params = {
+            access_key: apiKey,
+            email: email,
+            smtp: 1,
+            format: 1
+        };
 
-        if (status === 'valid') {
+        const response = await axios.get(apiUrl, { params });
 
+        const smtp_check  = response.data.smtp_check;
+        const format_valid = response.data.format_valid;
+
+        console.log("okokokok: ",smtp_check, format_valid);
+        console.log(response.data);
+
+        if (smtp_check && format_valid) {
+            
             User.register(new User({ email, name }), password, (err, user) => {
                 if (err) {
                     console.error(err);
                     return res.redirect('/register');
                 }
-
+        
+                // Use req.login to log the user in and then redirect to '/todo'
                 req.login(user, function (err) {
                     if (err) {
                         console.error(err);
-                        return res.redirect('/');
+                        return res.redirect('/login');
                     }
                     return res.redirect('/todo');
                 });
@@ -253,14 +266,14 @@ app.post("/register", async (req, res) => {
         } else {
             return res.status(400).json({ message: 'Invalid Email, Please Enter a Valid Email Address.' });
         }
-
     } catch (error) {
         console.error('Email validation error:', error);
         return res.status(500).json({ message: 'Email validation failed. Please try again later.' });
     }
 
-
+    
 });
+
 
 
 // 404 error handler
