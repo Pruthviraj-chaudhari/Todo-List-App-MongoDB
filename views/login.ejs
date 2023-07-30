@@ -15,6 +15,11 @@
     <div class="box">
       <form class="loginsignup-form" action="/login" method="post">
         <h2>Login</h2>
+       
+        <% if (typeof errorMessage  !== 'undefined') { %>
+          <p class="errorMessage"><%= errorMessage %></p>
+        <% } %>
+
         <input type="email" name="username" placeholder="Email" required/>
         <input type="password" name="password" placeholder="Password" required/>
 

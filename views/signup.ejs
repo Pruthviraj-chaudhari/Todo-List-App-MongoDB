@@ -14,8 +14,13 @@
   </div>
 
   <div class="box">
-    <form class="loginsignup-form" action="/register" method="post">
+    <form id="signupForm" class="loginsignup-form" action="/register" method="post">
       <h2>Sign Up</h2>
+
+      <% if (typeof errorMessage  !== 'undefined') { %>
+        <p class="errorMessage"><%= errorMessage %></p>
+      <% } %>
+
       <input type="text" name="name" placeholder="Name" required />
       <input type="email" name="email" placeholder="Email" required />
       <input type="password" name="password" placeholder="Create New Password" required />
@@ -75,7 +80,10 @@
     const confirmPasswordInput = form.querySelector("input[name='confirmPassword']");
 
     form.addEventListener("submit", function (event) {
-      if (passwordInput.value !== confirmPasswordInput.value) {
+      if (passwordInput.value.length < 6) {
+        event.preventDefault(); // Prevent form submission if password is less than 6 characters
+        alert("Password must be at least 6 characters long.");
+      } else if (passwordInput.value !== confirmPasswordInput.value) {
         event.preventDefault(); // Prevent form submission if passwords don't match
         alert("Passwords do not match. Please confirm your password.");
       }

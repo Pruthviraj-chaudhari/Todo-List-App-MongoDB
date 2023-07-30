@@ -155,3 +155,10 @@ footer {
 .github:hover {
   box-shadow: none;
 }
+
+.errorMessage {
+  color: rgb(255, 0, 0);
+  font-size: large;
+  font-weight: 600;
+  font-family: "helvetica neue";
+}

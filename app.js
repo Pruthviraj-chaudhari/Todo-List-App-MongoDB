@@ -106,7 +106,7 @@ passport.use(new GoogleStrategy({
 const formatedDate = date.getDate();
 
 app.get("/", (req, res) => {
-    res.render("login");
+    res.render("login", {errorMessage: null});
 });
 
 app.get("/register", (req, res) => {
@@ -124,7 +124,7 @@ app.get('/auth/google',
 );
 
 app.get('/auth/google/todo',
-    passport.authenticate('google', { failureRedirect: "/login" }),
+    passport.authenticate('google', { failureRedirect: "/" }),
     (req, res) => {
         // Successful authentication
         res.redirect("/todo");
@@ -136,7 +136,7 @@ app.get('/auth/github',
 );
 
 app.get('/auth/github/todo',
-    passport.authenticate('github', { failureRedirect: '/login' }),
+    passport.authenticate('github', { failureRedirect: '/' }),
     (req, res) => {
         // Successful authentication
         res.redirect('/todo');
@@ -217,11 +217,15 @@ app.post('/delete', async (req, res) => {
     }
 });
 
+app.get("/login", (req, res)=>{
+    res.render("login", {errorMessage: "User Not Found !"});
+});
+
 app.post("/login", passport.authenticate('local', {
     successRedirect: '/todo',
-    failureRedirect: '/'
+    failureRedirect: '/login'
 }));
-
+  
 app.post("/register", async (req, res) => {
 
     const { name, email, password } = req.body;
@@ -242,9 +246,6 @@ app.post("/register", async (req, res) => {
         const smtp_check  = response.data.smtp_check;
         const format_valid = response.data.format_valid;
 
-        console.log("okokokok: ",smtp_check, format_valid);
-        console.log(response.data);
-
         if (smtp_check && format_valid) {
             
             User.register(new User({ email, name }), password, (err, user) => {
@@ -264,11 +265,11 @@ app.post("/register", async (req, res) => {
             });
 
         } else {
-            return res.status(400).json({ message: 'Invalid Email, Please Enter a Valid Email Address.' });
+            return res.status(400).render("signup", {errorMessage: "Invalid Email"});
         }
     } catch (error) {
         console.error('Email validation error:', error);
-        return res.status(500).json({ message: 'Email validation failed. Please try again later.' });
+        return res.status(500).render("signup", {errorMessage: "Email validation failed. Please try again later"});
     }
 
     
